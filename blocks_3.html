@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<style>
+canvas {
+    border:1px solid #F8B739;
+	border-radius: 15px 15px;
+    background-color: #BD245F;
+}
+</style>
+</head>
+<body onload="startGame()">
+<script>
+
+//Basic Grid but on click, the clicked block turns red
+
+var myGamePiece;
+var tiles = [];
+var NUM_ROWS = 20;
+var NUM_COLS = 10;
+var offset_x = 44;
+var offset_y = 40;
+var gaps = 23; //gaps = size of the square tile + padding
+var blockColor = "#F3DCAD";
+
+function startGame() {
+    myGameArea.start();
+	let blockSize = 20;
+	//Create a GRID of NUM_ROWS x NUM_COLS rectangles. Each rectangle is a component with its height, width, posx , posy 
+	for (var i = 0; i < NUM_ROWS; i++) {
+	// Index i refers to the row number --> grid is filled starting from top to bottom
+    for (var j = 0; j < NUM_COLS; j++) {
+	// Index j refers to the column number --> tile is placed starting from left to right
+        var  tileX = j * gaps + offset_x; 
+        var  tileY = i * gaps + offset_y;
+        tiles.push(new component(blockSize,blockSize, blockColor, tileX, tileY, i*NUM_COLS + j)); //new component to 
+    }
+	}
+	myGameArea.canvas.addEventListener("click", function(e)
+												{ //Get the x-position of mouse-click & use the x-offset & size of tile to calculate column.
+												  
+												  var rect = myGameArea.canvas.getBoundingClientRect();
+												  var x = Math.floor((e.clientX - rect.left - offset_x)/gaps);
+												 //Now this works: Mouseclick returns absolute position of mouse on screen, tiles are placed relative to canvas
+												 //Offsets from the bounding rectangle are subtracted to calculate relative position 
+												
+												 //Get the y-position of mouse-click & use the y-offset & size of tile to calculate row. 
+												  var y = Math.floor((e.clientY - rect.top - offset_y)/gaps);
+												  
+												  var tileNum = y* NUM_COLS + x;
+												  if (tileNum >= 0 && tileNum < tiles.length)
+												     { tiles[tileNum].clicked(); //Call clicked action on the selected tile
+													  }
+											    }, false);
+}
+
+
+//Creates the game canvas and places it within the HTML DOM
+var myGameArea = {
+    canvas : document.createElement("canvas"),
+	// start function will be called on load of the document
+    start : function() {
+        this.canvas.width = 320;
+        this.canvas.height = 530;
+        this.context = this.canvas.getContext("2d");
+        document.body.insertBefore(this.canvas, document.body.childNodes[0]); //inserts the canvas element into doc
+    }
+}
+
+//Template for creating new components - takes parameters of size, position, color & index (redundant) just for tracking
+function component(width, height, color, x, y, index) {
+    //Setting the parameters
+	this.width = width;
+    this.height = height;
+	this.index = index;
+	this.tileColor = color;
+    this.x = x;
+    this.y = y;    
+    ctx = myGameArea.context;
+	ctx.beginPath();
+    ctx.fillStyle = this.tileColor;
+    ctx.fillRect(this.x, this.y, this.width, this.height);
+	
+	//Function that will toggle colors between black & chosen block color when clicked
+	this.clicked = function()
+					{ if (this.tileColor == "black") 
+					      {this.tileColor = blockColor;}
+					  else this.tileColor = "black";
+					  ctx.fillStyle = this.tileColor;
+					  ctx.fillRect(this.x, this.y, this.width, this.height);
+					}
+}
+
+
+</script>
+
+<p>Clicking on square tiles to toggle colors</p>
+
+</body>
+</html>

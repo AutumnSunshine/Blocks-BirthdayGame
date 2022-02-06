@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<style>
+canvas {
+    border:1px solid #F8B739;
+	border-radius: 15px 15px;
+    background-color: #BD245F;
+}
+</style>
+</head>
+<body onload="startGame()">
+<script>
+
+/** Main Goal: 1.Instead of changing blocks color on movement, change the underlying tile's color --done
+               2.Make the blockstop if it hits a tile that is occupied -- done 
+			   The game Play testing is done using the gul block, ie. the one shaped like a T 
+**/
+
+var tiles = [];
+var NUM_ROWS = 20;
+var NUM_COLS = 10;
+var offset_x = 44;
+var offset_y = 40;
+var gaps = 23; //gaps = size of the square tile + padding
+var blockColor = "#F3DCAD";
+var blockSize = 20;
+var currentBlock;
+var gul = [];
+var currentInd;
+var gulPos = [ [3,0,4,0,5,0,4,1], [5,0,5,1,5,2,4,1], [5,2,4,2,3,2,4,1],[3,2,3,1,3,0,4,1]];
+
+
+function startGame() {
+    myGameArea.start();
+	 
+}
+
+//Main Game function: 
+function updateGame() {  
+    currentBlock.movedown();
+}
+
+//Helper functions that takes the row & column position of a tile in a grid and returns x & y coordinates
+function calcPosX(index)
+{	return index * gaps + offset_x;}
+function calcPosY(index)
+{	return index * gaps + offset_y;}
+
+
+//Creates the game canvas and places it within the HTML DOM
+var myGameArea = {
+    canvas : document.createElement("canvas"),
+	// start function will be called on load of the document
+    start : function() {
+        this.canvas.width = 320;
+        this.canvas.height = 530;
+        this.context = this.canvas.getContext("2d");
+        document.body.insertBefore(this.canvas, document.body.childNodes[0]); //inserts the canvas element into doc
+	    
+		//FILL GRID OF TILES
+		//Create a GRID of NUM_ROWS x NUM_COLS rectangles. Each rectangle is a component with its height, width, posx , posy 
+	    for (var i = 0; i < NUM_ROWS; i++) {
+	    // Index i refers to the row number --> grid is filled starting from top to bottom
+        for (var j = 0; j < NUM_COLS; j++) {
+	    // Index j refers to the column number --> tile is placed starting from left to right
+        var  tileX = calcPosX(j);
+        var  tileY = calcPosY(i);
+        tiles.push(new component(blockSize,blockSize, blockColor, tileX, tileY, i*NUM_COLS + j)); //new component to fill the grid 
+        }
+	    }
+		
+		//NEW SQUARE BLOCK
+			/*GUL
+			this.pieceColor = "#FF6464";
+			this.piece.push(new quadpiece(3, 0));
+			this.piece.push(new quadpiece(4, 0));
+			this.piece.push(new quadpiece(5, 0));
+			this.piece.push(new quadpiece(4, 1));
+			*/
+        gul.push(new gamePiece("#FF6464",3,0,4,0,5,0,4,1,2,0,1,1,0,2,0,0));
+        gul.push(new gamePiece("#FF6464",5,0,5,1,5,2,4,1,0,2,-1,1,-2,0,0,0));
+        gul.push(new gamePiece("#FF6464",5,2,4,2,3,2,4,1,-2,0,-1,-1,0,-2,0,0));
+        gul.push(new gamePiece("#FF6464",3,2,3,1,3,0,4,1,0,-2,1,-1,2,0,0,0));
+		
+		
+
+	    document.addEventListener("keydown", function(e)
+												 {if (e.code == "ArrowDown") currentBlock.movedown();
+												  else if (e.code == "ArrowRight") currentBlock.moveright();
+											      else if (e.code == "ArrowLeft") currentBlock.moveleft();
+												  else if (e.code == "ArrowUp") currentBlock.moveup();
+												  
+												 }, false);
+												 
+    	//Trial function to make some random tiles of the grid occupied.
+		for(var k = 3, temp = 0; k < 8 ; k++)
+		{  temp = (NUM_ROWS - 1) * NUM_COLS+ k;
+		   tiles[temp].isFree = false;
+		   tiles[temp].drawComponent("#3EC1D3");
+		}
+		for(var k = 15, temp = 0; k < 20 ; k++)
+		{  temp = (k) * NUM_COLS+ 3;
+		   tiles[temp].isFree = false;
+		   tiles[temp].drawComponent("#3EC1D3");
+		}
+		
+	
+		this.dropNewBlock();
+		this.interval = setInterval(updateGame,2000);
+    },
+	dropNewBlock : function()
+	{   //reset the current form, i.e. indX and indY to be the original form -- for now it's only gul 
+	    var tempPiece, temp;
+	    for(var i = 0; i< gul.length; i++)
+		{ temp = 0;
+		  for(var j =0; j< gul[i].piece.length; j++)
+		  { tempPiece = gul[i].piece[j];
+		    tempPiece.indX = gulPos[i][temp];
+			tempPiece.indY = gulPos[i][temp + 1];
+            temp = temp + 2;
+	      }
+		}	
+	    currentInd = Math.floor((Math.random()*gul.length));
+		currentBlock = gul[currentInd];
+		currentBlock.drawPiece(currentBlock.pieceColor);
+	},
+	stop : function() {
+		clearInterval(this.interval);
+	},
+    clear : function() {
+        this.context.clearRect(0, 0, this.canvas.width, this.canvas.height); //Clearing the canvas
+    }	
+}
+
+//Template for creating new components - takes parameters of size, position, color & index (redundant) just for tracking
+function component(width, height, color, x, y, index) {
+    //Setting the parameters
+	this.width = width;
+    this.height = height;
+	this.index = index;
+	this.tileColor = color;
+    this.x = x;
+    this.y = y;    
+	this.isFree = true;
+	ctx = myGameArea.context;
+	ctx.beginPath();
+	ctx.fillStyle = this.tileColor;
+	ctx.fillRect(this.x, this.y, this.width, this.height);
+	
+	//Helper function that helps in drawing 
+	this.drawComponent = function(newColor) {
+	this.tileColor = newColor;
+	ctx.fillStyle = newColor;
+	ctx.fillRect(this.x, this.y, this.width, this.height);
+	}
+}
+
+//
+function quadpiece(indX, indY, shiftX, shiftY) {
+    //Setting the parameters index x , y in the grid and the position on canvas
+	this.indX = indX;
+    this.indY = indY;   
+	this.shiftX = shiftX;
+	this.shiftY = shiftY;
+}
+
+function gamePiece(colors, x1, y1, x2, y2, x3, y3, x4, y4, m1,n1, m2, n2, m3, n3, m4, n4) {
+	this.piece = []; //Using new Array(4) just inserted undefined 
+	this.pieceColor = colors; // "#77D970";
+	this.piece.push(new quadpiece(x1,y1,m1,n1));
+	this.piece.push(new quadpiece(x2,y2,m2,n2));
+	this.piece.push(new quadpiece(x3,y3,m3,n3));
+	this.piece.push(new quadpiece(x4,y4,m4,n4));
+	
+	
+	/* PALOMA
+	this.pieceColor= "#EAA81B";
+	this.piece.push(new quadpiece(4, 0));
+	this.piece.push(new quadpiece(5, 0));
+	this.piece.push(new quadpiece(4, 1));
+	this.piece.push(new quadpiece(5, 1));
+	*/
+	
+	/*VAAN
+	this.pieceColor = "#172774";
+	this.piece.push(new quadpiece(4, 0));
+	this.piece.push(new quadpiece(4, 1));
+	this.piece.push(new quadpiece(4, 2));
+	this.piece.push(new quadpiece(5, 0));
+	*/
+	
+	/*MIKAN
+	this.pieceColor = "#FF6701";
+	this.piece.push(new quadpiece(4, 0));
+	this.piece.push(new quadpiece(5, 0));
+	this.piece.push(new quadpiece(5, 1));
+	this.piece.push(new quadpiece(5, 2));
+	*/
+	
+	/*TIM
+	this.pieceColor = "#7D0000";
+	this.piece.push(new quadpiece(4, 0));
+	this.piece.push(new quadpiece(4, 0));
+	this.piece.push(new quadpiece(4, 1));
+	this.piece.push(new quadpiece(4, 2));
+	this.piece.push(new quadpiece(4, 3));
+	*/
+	
+	/*GUL
+	this.pieceColor = "#FF6464";
+	this.piece.push(new quadpiece(3, 0));
+	this.piece.push(new quadpiece(4, 0));
+	this.piece.push(new quadpiece(5, 0));
+	this.piece.push(new quadpiece(4, 1));
+	*/
+	
+	/*EBONY
+	this.pieceColor = "#11052C";
+	this.piece.push(new quadpiece(3, 0));
+	this.piece.push(new quadpiece(4, 0));
+	this.piece.push(new quadpiece(4, 1));
+	this.piece.push(new quadpiece(5, 1));
+	*/
+	
+	/*ATARAZIA
+	this.pieceColor = "#77D970";
+	this.piece.push(new quadpiece(4, 0));
+	this.piece.push(new quadpiece(5, 0));
+	this.piece.push(new quadpiece(4, 1));
+	this.piece.push(new quadpiece(3, 1));
+	*/
+	
+    //Helper function to run through a set of indices and check if all the parts of a piece are withing the game grid
+	this.checkPiece = function(shift, isDownMove, maxInd )
+	{    var temp, tempx, tempy, flag;
+	   
+	     for(var i = 0, flag = 1; i< this.piece.length; i++)
+		 {  if(isDownMove) { temp = this.piece[i].indY;  tempx = this.piece[i].indX; tempy = temp + shift; }//Decides whether to consider row or column.
+				else 	   { temp = this.piece[i].indX; tempy = this.piece[i].indY; tempx = temp + shift;}
+			temp = temp + shift; 
+			if(temp < 0 || temp >= maxInd)//check bounds of the grid
+			   flag = 0;
+			//check for occupied tile, i.e. underlying tile is unoccupied
+			temp = tempy * NUM_COLS + tempx;
+			if (flag && !(tiles[temp].isFree))
+				flag = 0;
+		 }
+		 return flag;
+	}
+	
+    // Helper function that clears old position and displays new position of block
+	this.drawPiece= function(newColor)
+	{	 var temp;
+	     for(var i = 0; i< this.piece.length; i++)
+		 {  temp = this.piece[i].indY * NUM_COLS + this.piece[i].indX;
+		    tiles[temp].drawComponent(newColor);
+		 }
+	}
+
+	//Function to be called when down arrow is pressed. will move the piece down by 1 row => y index increased by 1
+	this.movedown= function() {	
+		if(this.checkPiece(1,true,NUM_ROWS)) {
+		    this.drawPiece(blockColor);
+			for (var i = 0 ; i < this.piece.length; i++ )
+				{ this.piece[i].indY = this.piece[i].indY + 1;
+				}
+			this.drawPiece(this.pieceColor);
+		}
+		else //i.e. there is no movedown => time for a new block
+		{ window.alert("We are done!!");
+		  //Make the underlying tiles occupied 
+		  for (var i = 0,temp= 0 ; i < this.piece.length; i++ )
+				{ temp = this.piece[i].indY * NUM_COLS + this.piece[i].indX;
+				  tiles[temp].isFree = false;
+				}
+		  //Call the function of GameArea to drop new block
+		  myGameArea.dropNewBlock();
+		}
+    }
+	
+	//Function to be called when right arrow is pressed. will move the piece right by 1 column => x index increased by 1
+    this.moveright= function() {
+		 if(this.checkPiece(1,false,NUM_COLS)) {
+		    this.drawPiece(blockColor);
+			for (var i = 0 ; i < this.piece.length; i++ )
+				{ this.piece[i].indX = this.piece[i].indX + 1;
+				}
+			this.drawPiece(this.pieceColor);
+		}
+	}	   
+	
+	
+	//Function to be called when left arrow is pressed. will move the piece left by 1 column => x index decreased by 1
+	this.moveleft= function() {
+		 if(this.checkPiece(-1,false,NUM_COLS)) {
+		    this.drawPiece(blockColor);
+			for (var i = 0 ; i < this.piece.length; i++ )
+				{ this.piece[i].indX = this.piece[i].indX - 1;
+				}
+			this.drawPiece(this.pieceColor);
+		}
+	}
+
+	//flip - Transforms the next block into the current block position, checks if the transformed block is valid and if so, resets the current block to the transformed block.	
+	this.moveup= function() {
+		 //check length 
+		 if(gul.length > 1) // i.e. the current Form has a flippable symmetry 
+		 { var nextPiece = gul[(currentInd+1)% gul.length];
+		   //calculate nextPiece's new transformed position 
+		   for (var i = 0 ; i < this.piece.length; i++ )
+				{ nextPiece.piece[i].indX = this.piece[i].indX + this.piece[i].shiftX;
+                  nextPiece.piece[i].indY = this.piece[i].indY + this.piece[i].shiftY;
+				}
+		  //check if transformed next piece is valid 
+		  if(nextPiece.checkPiece(0,false,NUM_COLS)) {
+		    //change currentInd & currentBlock
+			currentInd = (currentInd+1)%gul.length;
+			currentBlock = nextPiece;
+		 	this.drawPiece(blockColor);
+			nextPiece.drawPiece(this.pieceColor);
+		 }
+		}
+	}
+	
+	
+} 
+
+</script>
+
+<p>Create a block factory, make the block stop</p>
+
+</body>
+</html>

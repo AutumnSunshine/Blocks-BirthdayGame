@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<style>
+canvas {
+    border:1px solid #F8B739;
+	border-radius: 15px 15px;
+    background-color: #BD245F;
+}
+</style>
+</head>
+<body onload="startGame()">
+<script>
+
+var myGamePiece;
+var tiles = [];
+var NUM_ROWS = 20;
+var NUM_COLS = 10;
+var offset_x = 44;
+var offset_y = 40;
+var gaps = 23;
+
+function startGame() {
+    myGameArea.start();
+	let blockColor = "#F3DCAD";
+	let blockSize = 20
+    //myGamePiece = new component(30, 30, blockColor , 10, 120);
+	for (var i = 0; i < NUM_COLS; i++) {
+    for (var j = 0; j < NUM_ROWS; j++) {
+        var  tileX = i * gaps + offset_x;
+        var  tileY = j * gaps + offset_y;
+        tiles.push(new component(blockSize,blockSize, blockColor, tileX, tileY));
+    }
+	}
+}
+
+var myGameArea = {
+    canvas : document.createElement("canvas"),
+    start : function() {
+        this.canvas.width = 320;
+        this.canvas.height = 530;
+        this.context = this.canvas.getContext("2d");
+        document.body.insertBefore(this.canvas, document.body.childNodes[0]);
+    }
+}
+
+
+function component(width, height, color, x, y) {
+    this.width = width;
+    this.height = height;
+    this.x = x;
+    this.y = y;    
+    ctx = myGameArea.context;
+	ctx.beginPath();
+    ctx.fillStyle = color;
+    ctx.fillRect(this.x, this.y, this.width, this.height);
+}
+
+
+
+
+</script>
+
+<p>We have added a component to our game, a red square!</p>
+
+</body>
+</html>

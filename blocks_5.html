@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<style>
+canvas {
+    border:1px solid #F8B739;
+	border-radius: 15px 15px;
+    background-color: #BD245F;
+}
+</style>
+</head>
+<body onload="startGame()">
+<script>
+
+//Basic Grid but on click, the clicked block turns red
+
+var myGamePiece;
+var tiles = [];
+var NUM_ROWS = 20;
+var NUM_COLS = 10;
+var offset_x = 44;
+var offset_y = 40;
+var gaps = 23; //gaps = size of the square tile + padding
+var blockColor = "#F3DCAD";
+var blockSize = 20;
+var currentBlock;
+
+function startGame() {
+    myGameArea.start();
+	//Create a GRID of NUM_ROWS x NUM_COLS rectangles. Each rectangle is a component with its height, width, posx , posy 
+	for (var i = 0; i < NUM_ROWS; i++) {
+	// Index i refers to the row number --> grid is filled starting from top to bottom
+    for (var j = 0; j < NUM_COLS; j++) {
+	// Index j refers to the column number --> tile is placed starting from left to right
+        var  tileX = calcPosX(j);
+        var  tileY = calcPosY(i);
+        tiles.push(new component(blockSize,blockSize, blockColor, tileX, tileY, i*NUM_COLS + j)); //new component to 
+    }
+	}
+	currentBlock = new gamePiece();
+	
+	myGameArea.canvas.addEventListener("click", function(e)
+												{ //Get the x-position of mouse-click & use the x-offset & size of tile to calculate column.
+												  
+												  var rect = myGameArea.canvas.getBoundingClientRect();
+												  var x = Math.floor((e.clientX - rect.left - offset_x)/gaps);
+												 //Now this works: Mouseclick returns absolute position of mouse on screen, tiles are placed relative to canvas
+												 //Offsets from the bounding rectangle are subtracted to calculate relative position 
+												
+												 //Get the y-position of mouse-click & use the y-offset & size of tile to calculate row. 
+												  var y = Math.floor((e.clientY - rect.top - offset_y)/gaps);
+												  
+												  var tileNum = y* NUM_COLS + x;
+												  if (tileNum >= 0 && tileNum < tiles.length)
+												     { tiles[tileNum].clicked(); //Call clicked action on the selected tile
+													  }
+											    }, false);
+
+	document.addEventListener("keydown", function(e)
+												 {if (e.code == "ArrowDown") currentBlock.movedown();
+												  else if (e.code == "ArrowRight") currentBlock.moveright();
+											      else if (e.code == "ArrowLeft") currentBlock.moveleft();
+												 }, false);
+
+}
+
+//Helper functions that takes the row & column position of a tile in a grid and returns x & y coordinates
+function calcPosX(index)
+{	return index * gaps + offset_x;}
+function calcPosY(index)
+{	return index * gaps + offset_y;}
+
+
+//Creates the game canvas and places it within the HTML DOM
+var myGameArea = {
+    canvas : document.createElement("canvas"),
+	// start function will be called on load of the document
+    start : function() {
+        this.canvas.width = 320;
+        this.canvas.height = 530;
+        this.context = this.canvas.getContext("2d");
+        document.body.insertBefore(this.canvas, document.body.childNodes[0]); //inserts the canvas element into doc
+    }
+}
+
+//Template for creating new components - takes parameters of size, position, color & index (redundant) just for tracking
+function component(width, height, color, x, y, index) {
+    //Setting the parameters
+	this.width = width;
+    this.height = height;
+	this.index = index;
+	this.tileColor = color;
+    this.x = x;
+    this.y = y;    
+    ctx = myGameArea.context;
+	ctx.beginPath();
+    ctx.fillStyle = this.tileColor;
+    ctx.fillRect(this.x, this.y, this.width, this.height);
+	
+	//Function that will toggle colors between black & chosen block color when clicked
+	this.clicked = function()
+					{ if (this.tileColor == "black") 
+					      {this.tileColor = blockColor;}
+					  else this.tileColor = "black";
+					  ctx.fillStyle = this.tileColor;
+					  ctx.fillRect(this.x, this.y, this.width, this.height);
+					}
+}
+
+//
+function quadpiece(indX, indY, color, x, y) {
+    //Setting the parameters index x , y in the grid and the position on canvas
+	this.indX = indX;
+    this.indY = indY;
+	this.tileColor = color;
+    this.x = x;
+    this.y = y;    
+    
+	//Get context and display this piece
+	this.drawPiece = function()
+	{
+		ctx = myGameArea.context;
+		ctx.beginPath();
+		ctx.fillStyle = this.tileColor;
+		ctx.fillRect(this.x, this.y, blockSize, blockSize);
+	}
+}
+
+
+
+function gamePiece() {
+	this.piece = []; //Using new Array(4) just inserted undefined 
+	
+	this.piece.push(new quadpiece(4, 0,"#EAA81B", calcPosX(4), calcPosY(0)));
+	this.piece.push(new quadpiece(5, 0,"#EAA81B", calcPosX(5), calcPosY(0)));
+	this.piece.push(new quadpiece(4, 1,"#EAA81B", calcPosX(4), calcPosY(1)));
+	this.piece.push(new quadpiece(5, 1,"#EAA81B", calcPosX(5), calcPosY(1)));
+	for (var i = this.piece.length - 1; i >= 0; i-- )
+				{ 
+				  this.piece[i].drawPiece();
+				}
+	
+    //Helper function to run through a set of indices and check if all the parts of a piece are withing the game grid
+	this.checkPiece = function(shift, isDownMove, maxInd )
+	{    var temp, flag;
+	     for(var i = 0, flag = 1; i< this.piece.length; i++)
+		 {  if(isDownMove) temp = this.piece[i].indY; //Decides whether to consider row or column.
+				else 	   temp = this.piece[i].indX;
+			temp = temp + shift; 
+			if(temp < 0 || temp >= maxInd)
+			   flag = 0;
+		 }
+		 return flag;
+	}
+	
+    // Helper function that clears old position and displays new position of block
+	this.clearPiece= function()
+	{	 for(var i = 0; i< this.piece.length; i++)
+		 {  this.piece[i].tileColor = blockColor;
+		    this.piece[i].drawPiece();
+		 }
+	}
+
+	//Function to be called when down arrow is pressed. will move the piece down by 1 row => y index increased by 1
+	this.movedown= function() {
+	    var tempColor = this.piece[0].tileColor;	
+		if(this.checkPiece(1,true,NUM_ROWS)) {
+		    this.clearPiece();
+			for (var i = 0 ; i < this.piece.length; i++ )
+				{ this.piece[i].indY = this.piece[i].indY + 1;
+				  this.piece[i].y = calcPosY(this.piece[i].indY);
+				  this.piece[i].tileColor = tempColor;
+				  this.piece[i].drawPiece();
+				}
+		}
+    }
+	
+	//Function to be called when right arrow is pressed. will move the piece right by 1 column => x index increased by 1
+    this.moveright= function() {
+		var tempColor = this.piece[0].tileColor;	
+		if(this.checkPiece(1,false,NUM_COLS)) {
+		    this.clearPiece();
+			for (var i = 0 ; i < this.piece.length; i++ )
+				{ this.piece[i].indX = this.piece[i].indX + 1;
+				  this.piece[i].x = calcPosX(this.piece[i].indX);
+				  this.piece[i].tileColor = tempColor;
+				  this.piece[i].drawPiece();
+				}
+		}
+	}	   
+	
+	//Function to be called when left arrow is pressed. will move the piece left by 1 column => x index decreased by 1
+	this.moveleft= function() {
+	    var tempColor = this.piece[0].tileColor;	
+		if(this.checkPiece(-1,false,NUM_COLS)) {
+		    this.clearPiece();
+			for (var i = 0 ; i < this.piece.length; i++ )
+				{ this.piece[i].indX = this.piece[i].indX - 1;
+				  this.piece[i].x = calcPosX(this.piece[i].indX);
+				  this.piece[i].tileColor = tempColor;
+				  this.piece[i].drawPiece();
+				}
+		}
+    
+	}	   
+} 
+
+</script>
+
+<p>Trying to place paloma on the canvas</p>
+
+</body>
+</html>
