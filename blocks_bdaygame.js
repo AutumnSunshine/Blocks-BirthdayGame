@@ -1,37 +1,5 @@
-<!DOCTYPE html>
-<html>
-<head>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<style>
-canvas {
-    border:1px solid #F8B739;
-	border-radius: 15px 15px;
-    background-color: #BD245F;
-}
-
-.button {
-  background-color: #21325E; /* Blue */
-  border: none;
-  color: white;
-  width: 40px;
-  height: 40px;
-  padding: 6px;
-  text-align: center;
-  text-decoration: none;
-  display: inline-block;
-  font-size: 16px;
-  margin: 2px 2px;
-  cursor: pointer;
-  border-radius : 18px
-}
-
-
-</style>
-</head>
-<body onload="startGame()">
-<script>
-
-/** Main Goal: A Piece Factory that generates 
+/** Main Goal: Create a blocks game that displays a grid of tiles. Blocks drop into the grid from the top. Goal of the game is to deftly maneveur 
+               the blocks to make lines and score points.
 **/
 
 var tiles = [];
@@ -48,19 +16,10 @@ var currentBlock;
 var currentInd;
 var currentForm = 0;
 var myScore = 0;
+var gameStop = false;
 
 
 //Different block pieces and their variants
-     
-/*var piecePos =   [
-                     [ [3,0,4,0,5,0,4,1], [5,0,5,1,5,2,4,1], [5,2,4,2,3,2,4,1],[3,2,3,1,3,0,4,1]], //gul
-					 [ [4,0,5,0,5,1,5,2], [5,1,5,2,4,2,3,2], [4,2,3,2,3,1,3,0],[3,1,3,0,4,0,5,0]], //mikan
-					 [ [4,0,3,0,3,1,3,2], [5,1,5,0,4,0,3,0], [4,2,5,2,5,1,5,0],[3,1,3,2,4,2,5,2]], //vaan
-					 [ [3,0,4,0,4,1,5,1], [3,2,3,1,4,1,4,0]], //ebony
-					 [ [3,1,4,1,4,0,5,0], [4,0,4,1,5,1,5,2]], //atarazia
-					 [ [4,0,4,1,4,2,4,3], [3,0,4,0,5,0,6,0]], //tim
-					 [ [4,0,5,0,4,1,5,1]] //paloma
-					];*/
 var piecePos =   [
                      [ [3,0,4,0,5,0,4,1], [5,0,5,1,5,2,4,1], [5,1,4,1,3,1,4,0],[3,2,3,1,3,0,4,1]],//gul
 					 [ [4,0,5,0,5,1,5,2], [5,0,5,1,4,1,3,1], [4,2,3,2,3,1,3,0],[3,1,3,0,4,0,5,0]], //mikan
@@ -247,6 +206,7 @@ var myGameArea = {
 	
 	stop : function() {
 		clearInterval(this.interval);
+		gameStop = true;
 		window.alert("Game over!!");
 		var info = document.getElementById("info");
 		info.innerHTML = "Thanks: <br/> To Mom & Dad & Hari </br> To UT Ma'am, all my CS profs, P.Norvig, C.Ogden & CS50 team  & Youtube recommendation algorithm </br> To Sowmya, Aish, Sandhya, Maha, Madhu, Ruchi, Uma, Ghazala, Kalpita & all my friends for their time & support <br/> To A.Gilchrist, R.Sapolsky, N.Djokovic, Y.Kanno, C.Evans, I.Takahata, S.Watanabe , Nujabes & ARR for some memorable momments.";		
@@ -321,6 +281,8 @@ function gamePiece(colors, x1, y1, x2, y2, x3, y3, x4, y4, m1,n1, m2, n2, m3, n3
 
 	//Function to be called when down arrow is pressed. will move the piece down by 1 row => y index increased by 1
 	this.movedown= function() {	
+	    if(gameStop) return;
+		
 	    let maxY = 0; //to help calculate score of block as max Y position of the piece  
 		if(this.checkPiece(1,true,NUM_ROWS)) {
 		    this.drawPiece(blockColor);
@@ -346,6 +308,7 @@ function gamePiece(colors, x1, y1, x2, y2, x3, y3, x4, y4, m1,n1, m2, n2, m3, n3
 	
 	//Function to be called when right arrow is pressed. will move the piece right by 1 column => x index increased by 1
     this.moveright= function() {
+		 if(gameStop) return;
 		 if(this.checkPiece(1,false,NUM_COLS)) {
 		    this.drawPiece(blockColor);
 			for (var i = 0 ; i < this.piece.length; i++ )
@@ -357,6 +320,7 @@ function gamePiece(colors, x1, y1, x2, y2, x3, y3, x4, y4, m1,n1, m2, n2, m3, n3
 	
 	//Function to be called when left arrow is pressed. will move the piece left by 1 column => x index decreased by 1
 	this.moveleft= function() {
+	     if(gameStop) return;
 		 if(this.checkPiece(-1,false,NUM_COLS)) {
 		    this.drawPiece(blockColor);
 			for (let i = 0 ; i < this.piece.length; i++ )
@@ -368,6 +332,7 @@ function gamePiece(colors, x1, y1, x2, y2, x3, y3, x4, y4, m1,n1, m2, n2, m3, n3
 
 	//flip - Transforms the next block into the current block position, checks if the transformed block is valid and if so, resets the current block to the transformed block.	
 	this.moveup= function() {
+		 if(gameStop) return;
 		 let tempForm = pieceList[currentForm];
 		 //check length		 
 		 if(tempForm.length > 1) // i.e. the current Form has a flippable symmetry 
@@ -388,23 +353,3 @@ function gamePiece(colors, x1, y1, x2, y2, x3, y3, x4, y4, m1,n1, m2, n2, m3, n3
 		}
 	}
 } 
-
-</script>
-<p>
-<div class = "container" style="width: 320px;">  
-<button class="button" style="position: relative; left:10%;" onclick = "button_moveleft()">&#x2190;</button>
-<button class="button" style="position: relative; left:15%;" onclick = "button_moveup()">&#x2191;</button>
-<button class="button" style="position: relative; left:20%;" onclick = "button_moveright()">&#x2192;</button>
-<button class="button" style="position: relative; left:25%;" onclick = "button_movedown()">&#x2193;</button>
-</div>
-</p>
-<pre id="info"> 
-Press <b>Left</b> arrow to move the block <b>Left</b>
-Press <b>Right</b> arrow to move the block <b>Right</b>
-Press <b>Down</b> arrow to move the block <b>Down</b>
-Press <b>Up</b> arrow to <b>Flip the block</b> to a different orientation
-Use either the arrow keys on keyboard or arrow buttons above
-</pre>
-
-</body>
-</html>
